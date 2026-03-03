@@ -1,0 +1,57 @@
+Doubts
+
+Q.1) What is appcontext and what is it used for and is the dta related or usecase based??
+AppContext.jsx
+//public data concern
+//auth concern
+-> 
+//Login.jsx creates the session.
+// AppContext restores the session.
+
+//utility/helper concern
+
+
+Q.2) From where did he get the id params from?? ie from where did he get the id for specific blog??
+-> I'm still confused on this part that where did {id} = useParams(), came form and from where did we get the id of that specific blog.
+
+
+Q.3) for the POST API there in frontend I passed it as baseURL/endpoint/:id but in backend
+ I didn't extract req.params as {id} i used const { blogId } = req.params;
+
+ Q.4) Why Didn't user have a resource and also why didn't admin have a resource since it was being used in backend!!
+
+
+Q.5) I still need to learn Auth and Authz more better way, I'm way to behind in this implementation concept.
+
+
+ #########################3
+
+
+#1: So I understood GET and POST very well,
+1] for GET
+frontend: 
+- we make a api call on the BaseUrl + endpoint, and store data in state
+Backend: 
+- simple blog.find ,store in variable and send in res.
+
+2] For GET by :Id
+frontend: 
+- we make a api call on the BaseUrl + endpoint + :id and store data in state
+Backend: 
+- extract the id using req.params not req.body
+- simple blog.findById ,store in variable and send in res.
+
+3] For POST
+frontend: 
+- we make a api call on the BaseUrl + endpoint, comma {the body }
+-  store response message in state
+backend: 
+- extract the id using req.body not req.params
+- commment.create({pass the req.body parameters)}
+- send message in res.
+
+
+Your understanding is correct
+✔ You’ve nailed GET / GET by ID / POST
+✔ You now understand why req.body vs req.params
+✔ This is exactly what a 1-year MERN dev should know
