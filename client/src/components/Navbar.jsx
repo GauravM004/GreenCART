@@ -5,7 +5,7 @@ import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
 
 
-const LoginModal = ({ showModal, setShowModal, axios, navigate }) => {
+const LoginModal = ({ showModal, setShowModal, api, navigate }) => {
   const handleGoogleLogin = () => {
     window.location.href = "http://localhost:4000/api/user/auth/google";
   };
@@ -151,15 +151,18 @@ const Navbar = () => {
     setSearchQuery,
     searchQuery,
     getCartCount,
-    axios,
+    api,
     setCartItems,
     setUser,
   } = useAppContext();
 
   const logout = async () => {
     try {
-      const { data } = await axios.get("/api/user/logout");
+      const { data } = await api.get("/api/user/logout");
       if (data.success) {
+        // Remove stored token so the auth interceptor stops sending it
+        localStorage.removeItem("token");
+
         toast.success(data.message);
         setCartItems({});
         setUser(null);
@@ -186,7 +189,7 @@ const Navbar = () => {
 
   return (
     <>
-      <LoginModal showModal={showModal} setShowModal={setShowModal} axios={axios} navigate={navigate} />
+      <LoginModal showModal={showModal} setShowModal={setShowModal} api={api} navigate={navigate} />
 
       <nav className="flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 py-4 border-b border-gray-300 bg-white relative">
         <NavLink to="/" onClick={() => setOpen(false)}>

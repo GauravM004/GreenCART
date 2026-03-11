@@ -23,7 +23,7 @@ import ContactUs from "./pages/ContactUs";
 import Dashboard from "./pages/seller/Dashboard";
 import MyProfile from "./components/MyProfile";
 import Practice from "./pages/Practice";
-
+import ContactUsSeller from "./pages/seller/ContactUs";
 const App = () => {
   const isSellerPath = useLocation().pathname.includes("seller");
   const { showUserLogin, isSeller } = useAppContext();
@@ -39,9 +39,9 @@ const App = () => {
         className={`${isSellerPath ? "" : "px-6 md:px-16 lg:px-24 xl:px-32"}`}
       >
         <Routes>
-                    <Route path="/oauth-success" element={<OAuthSuccess />} />
+          <Route path="/oauth-success" element={<OAuthSuccess />} />
           <Route path="/" element={<Home />} />
-         <Route path="/practice" element={<Practice />} />
+          <Route path="/practice" element={<Practice />} />
           <Route path="/products" element={<AllProducts />} />
           <Route path="/products/:category" element={<ProductCategory />} />
           <Route path="/products/:category/:id" element={<ProductDetails />} />
@@ -59,6 +59,7 @@ const App = () => {
             <Route path="product-list" element={<ProductList />} />
             <Route path="orders" element={<Orders />} />
             <Route path="dashboard" element={<Dashboard />} />
+            <Route path="contact-us" element={<ContactUsSeller />} />
           </Route>
         </Routes>
       </div>

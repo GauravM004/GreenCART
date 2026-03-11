@@ -4,12 +4,12 @@ import toast from "react-hot-toast";
 import { Package, TrendingUp, Search, Filter, Calendar, Tag } from "lucide-react";
 
 const ProductList = () => {
-  const { products, currency, axios, fetchProducts } = useAppContext();
+  const { products, currency, api, fetchProducts } = useAppContext();
   const [searchTerm, setSearchTerm] = useState("");
 
   const toggleStock = async (id, inStock) => {
     try {
-      const { data } = await axios.post("/api/product/stock", { id, inStock });
+      const { data } = await api.post("/api/product/stock", { id, inStock });
       if (data.success) {
         fetchProducts();
         toast.success(data.message);

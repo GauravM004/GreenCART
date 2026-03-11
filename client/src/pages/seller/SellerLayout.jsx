@@ -4,7 +4,7 @@ import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 
 const SellerLayout = () => {
-  const { axios, navigate, isSeller } = useAppContext();
+  const { api, navigate, isSeller } = useAppContext();
 
   const sidebarLinks = [
     { name: "Add Product", path: "/seller", icon: assets.add_icon },
@@ -15,12 +15,16 @@ const SellerLayout = () => {
       icon: assets.product_list_icon,
     },
     { name: "Orders", path: "/seller/orders", icon: assets.order_icon },
+    { name: "Contact Us", path: "/seller/contact-us", icon: assets.contact_icon },
   ];
 
   const logout = async () => {
     try {
-      const { data } = await axios.get("/api/seller/logout");
+      const { data } = await api.get("/api/seller/logout");
       if (data.success) {
+        // Clear any stored tokens so the app doesn't re-authenticate on refresh
+        localStorage.removeItem("token");
+
         toast.success(data.message);
         navigate("/");
       } else {

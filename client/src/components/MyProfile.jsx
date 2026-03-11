@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { Check, X } from "lucide-react";
 
 const MyProfile = () => {
-  const { user, axios } = useAppContext();
+  const { user, api, navigate } = useAppContext();
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   console.log(user);
@@ -22,6 +22,10 @@ const MyProfile = () => {
         phone: user.phone || "9328567210",
       });
     }
+   if (!user) {
+      toast.error("You are unauthenticated. Please login to view your profile");
+      return navigate("/");
+    }
   }, [user]);
 
   const handleChange = (e) =>
@@ -30,7 +34,7 @@ const MyProfile = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const { data } = await axios.put("/api/user/update-profile", formData);
+      const { data } = await api.put("/api/user/update-profile", formData);
       if (data.success) {
         toast.success("Profile updated successfully");
         setEditMode(false);

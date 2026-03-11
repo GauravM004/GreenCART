@@ -3,7 +3,7 @@ import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
 
 const Login = () => {
-  const { setShowUserLogin, setUser, axios, navigate } = useAppContext();
+  const { setShowUserLogin, setUser, api, navigate } = useAppContext();
 
   const [state, setState] = useState("login");
   const [name, setName] = useState("");
@@ -14,7 +14,7 @@ const Login = () => {
     try {
       event.preventDefault();
 
-      const { data } = await axios.post(`/api/user/${state}`, {
+      const { data } = await api.post(`/api/user/${state}`, {
         name,
         email,
         password,

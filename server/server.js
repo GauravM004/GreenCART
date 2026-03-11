@@ -10,6 +10,7 @@ import productRouter from './routes/productRoute.js';
 import cartRouter from './routes/cartRoute.js';
 import addressRouter from './routes/addressRoute.js';
 import orderRouter from './routes/orderRoute.js';
+import contactUsRouter from './routes/ContactUsRoute.js'; 
 import adminDashboardRouter from './routes/adminDashboardRoute.js'
 import { stripeWebhooks } from './controllers/orderController.js';
 import session from "express-session";
@@ -50,6 +51,7 @@ app.use('/api/product', productRouter)
 app.use('/api/cart', cartRouter)
 app.use('/api/address', addressRouter)
 app.use('/api/order', orderRouter)
+app.use('/api/contact-us', contactUsRouter)
 app.use('/api/admin', adminDashboardRouter)
 app.listen(port, ()=>{
     console.log(`Server is running on http://localhost:${port}`)

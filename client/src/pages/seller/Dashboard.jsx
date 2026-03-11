@@ -20,11 +20,11 @@ import {
 
 const Dashboard = () => {
   const [DashboardData, setDashBoardData] = useState([]);
-  const { axios } = useAppContext();
+  const { api } = useAppContext();
 
   const DashboardDataFetch = async () => {
     try {
-      const { data } = await axios.get("/api/admin/dashboard");
+      const { data } = await api.get("/api/admin/dashboard");
       if (data.success) {
         setDashBoardData(data);
         console.log(data);

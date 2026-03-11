@@ -14,7 +14,7 @@ const Cart = () => {
     updateCartItem,
     navigate,
     getCartAmount,
-    axios,
+    api,
     user,
     setCartItems,
   } = useAppContext();
@@ -46,7 +46,7 @@ const Cart = () => {
 
   const getUserAddress = async () => {
     try {
-      const { data } = await axios.get("/api/address/get");
+      const { data } = await api.get("/api/address/get");
       if (data.success) {
         setAddresses(data.addresses);
         if (data.addresses.length > 0) {
@@ -68,7 +68,7 @@ const Cart = () => {
 
       // Place Order with COD
       if (paymentOption === "COD") {
-        const { data } = await axios.post("/api/order/cod", {
+        const { data } = await api.post("/api/order/cod", {
           userId: user._id,
           items: cartArray.map((item) => ({
             product: item._id,
@@ -87,7 +87,7 @@ const Cart = () => {
         }
       } else {
         // Place Order with Stripe
-        const { data } = await axios.post("/api/order/stripe", {
+        const { data } = await api.post("/api/order/stripe", {
           userId: user._id,
           items: cartArray.map((item) => ({
             product: item._id,
@@ -131,10 +131,17 @@ const Cart = () => {
     }
   }, [user, cartArray]);
 
+  useEffect(() => {
+    if(!user){
+      toast.error("You are unauthenticated. Please login to view your cart");
+      return navigate("/");
+    }
+  }, [user]);
+    
+
  useEffect(() => {
   if (Object.keys(cartItems).length === 0 && !orderPlaced) {
-    navigate("/products");
-    toast.error("Your cart is empty, please add items to proceed.");
+    // toast.error("Your cart is empty, please add items to proceed.");
   }
 }, [cartItems]);
 

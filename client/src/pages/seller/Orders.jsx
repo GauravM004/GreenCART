@@ -20,14 +20,14 @@ import {
 } from "lucide-react";
 
 const Orders = () => {
-  const { currency, axios } = useAppContext();
+  const { currency, api } = useAppContext();
   const [orders, setOrders] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
 
   const fetchOrders = async () => {
     try {
-      const { data } = await axios.get("/api/order/seller");
+      const { data } = await api.get("/api/order/seller");
       if (data.success) {
         setOrders(data.orders);
         console.log("Orders JSON Data", data.orders);

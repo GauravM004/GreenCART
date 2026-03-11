@@ -1,10 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import axios from "axios";
-
-axios.defaults.withCredentials = true;
-axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL;
+import api from "../api/axiosInstance";
 
 export const AppContext = createContext();
 
@@ -24,7 +21,7 @@ export const AppContextProvider = ({ children }) => {
 
   const fetchSeller = async () => {
     try {
-      const { data } = await axios.get("/api/seller/is-auth");
+      const { data } = await api.get("/api/seller/is-auth");
       setIsSeller(!!data.success);
     } catch {
       setIsSeller(false);
@@ -34,7 +31,7 @@ export const AppContextProvider = ({ children }) => {
  
   const fetchUser = async () => {
     try {
-      const { data } = await axios.get("/api/user/is-auth");
+      const { data } = await api.get("/api/user/is-auth");
       if (data.success) {
         setUser(data.user);
         setCartItems(data.user.cartItems || {});
@@ -47,7 +44,7 @@ export const AppContextProvider = ({ children }) => {
  
   const fetchProducts = async () => {
     try {
-      const { data } = await axios.get("/api/product/list");
+      const { data } = await api.get("/api/product/list");
       if (data.success) {
         setProducts(data.products);
       } else {
@@ -125,7 +122,7 @@ export const AppContextProvider = ({ children }) => {
   useEffect(() => {
     const syncCart = async () => {
       try {
-        const { data } = await axios.post("/api/cart/update", { cartItems });
+        const { data } = await api.post("/api/cart/update", { cartItems });
         if (!data.success) {
           toast.error(data.message);
         }
@@ -161,7 +158,7 @@ export const AppContextProvider = ({ children }) => {
     isCartOpen,
     setIsCartOpen,
     currency,
-    axios,
+    api,
     setCartItems,
   };
 
