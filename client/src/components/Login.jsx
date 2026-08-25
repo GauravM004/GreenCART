@@ -1,30 +1,33 @@
 import React,{useState} from "react";
-import { useAppContext } from "../context/AppContext";
+import { useAppDispatch } from "../app/hooks";
+import { setUser, setShowUserLogin } from "../features/auth/authSlice";
+import { setShowUserLogin as setUIShowUserLogin } from "../features/ui/uiSlice";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useLoginUserMutation } from "../features/auth/authApi";
 
 const Login = () => {
-  const { setShowUserLogin, setUser, axios, navigate } = useAppContext();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const [state, setState] = useState("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginUser] = useLoginUserMutation();
 
   const onSubmitHandler = async (event) => {
     try {
       event.preventDefault();
 
-      const { data } = await axios.post(`/api/user/${state}`, {
-        name,
-        email,
-        password,
-      });
-      if (data.success) {
+      const result = await loginUser({ state, name, email, password });
+      const data = result.data;
+      if (data?.success) {
         navigate("/");
-        setUser(data.user);
-        setShowUserLogin(false);
+        dispatch(setUser(data.user));
+        dispatch(setUIShowUserLogin(false));
       } else {
-        toast.error(data.message);
+        toast.error(data?.message || "Unable to login right now");
       }
     } catch (error) {
       toast.error(error.message);
@@ -33,7 +36,7 @@ const Login = () => {
 
   return (
     <div
-      onClick={() => setShowUserLogin(false)}
+      onClick={() => dispatch(setUIShowUserLogin(false))}
       className="fixed top-0 bottom-0 left-0 right-0 z-30 flex items-center text-sm text-gray-600 bg-black/50"
     >
       <form

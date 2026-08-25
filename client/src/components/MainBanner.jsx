@@ -1,9 +1,9 @@
 import React from "react";
 import { ShoppingCart, Leaf, Zap } from "lucide-react";
-import { useAppContext } from "../context/AppContext";
+import { useNavigate } from "react-router-dom";
 
 const MainBanner = () => {
-  const { navigate } = useAppContext();
+  const navigate = useNavigate();
   return (
     <div className="relative w-full overflow-hidden">
 <div className="absolute inset-y-0 left-0 w-full bg-gradient-to-r from-emerald-50 to-transparent [mask-image:linear-gradient(to_right,black_40%,transparent_100%)] z-10 pointer-events-none"></div>

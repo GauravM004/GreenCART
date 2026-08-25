@@ -1,16 +1,28 @@
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import * as userService from "../services/userService.js";
 
-const authUser = async (req, res, next) => {
+/**
+ * Authenticate User Middleware
+ * Verifies JWT token from Authorization header or cookies
+ * Attaches user to req.user and userId to req.userId
+ */
+const authenticateUser = async (req, res, next) => {
   try {
     let token;
 
-    // 1️⃣ Check Authorization Header (JWT / OAuth flow)
+    // 1️⃣ Check Authorization Header (Bearer token from frontend)
     if (req.headers.authorization) {
-      token = req.headers.authorization.split(" ")[1];
+      const headerParts = req.headers.authorization.split(" ");
+      if (headerParts.length !== 2 || headerParts[0] !== "Bearer") {
+        return res.status(401).json({
+          success: false,
+          message: "Invalid Authorization header format",
+        });
+      }
+      token = headerParts[1];
     }
 
-    // 2️⃣ If not found, check cookies (old session flow)
+    // 2️⃣ If not found, check cookies (backward compatibility)
     if (!token && req.cookies.token) {
       token = req.cookies.token;
     }
@@ -18,31 +30,49 @@ const authUser = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Not Authorized",
+        message: "No token provided. Please login.",
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // 3️⃣ Verify JWT
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (jwtError) {
+      if (jwtError.name === "TokenExpiredError") {
+        return res.status(401).json({
+          success: false,
+          message: "Token expired. Please login again.",
+        });
+      }
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token.",
+      });
+    }
 
-    const user = await User.findById(decoded.userId || decoded.id);
+    // 4️⃣ Find user in database
+    const user = await userService.findUserById(decoded.userId);
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: "User not found",
+        message: "User not found.",
       });
     }
 
+    // 5️⃣ Attach user to request object
     req.user = user;
-    req.body.userId = user._id;
+    req.userId = user.id;
 
     next();
   } catch (error) {
-    return res.status(401).json({
+    console.error("Auth Error:", error.message);
+    return res.status(500).json({
       success: false,
-      message: "Invalid Token",
+      message: "Authentication failed.",
     });
   }
 };
 
-export default authUser;
+export default authenticateUser;

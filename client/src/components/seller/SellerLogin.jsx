@@ -1,24 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { useAppContext } from "../../context/AppContext";
+import { useAppSelector, useAppDispatch } from "../../app/hooks";
+import { selectIsSeller, setIsSeller } from "../../features/auth/authSlice";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useLoginUserMutation } from "../../features/auth/authApi";
 
 const SellerLogin = () => {
-  const { isSeller, setIsSeller, navigate, axios } = useAppContext();
+  const isSeller = useAppSelector(selectIsSeller);
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loginSeller] = useLoginUserMutation();
 
   const onSubmitHandler = async (event) => {
     try {
       event.preventDefault();
-      const { data } = await axios.post("/api/seller/login", {
-        email,
-        password,
-      });
-      if (data.success) {
-        setIsSeller(true);
+      const result = await loginSeller({ state: "login", email, password });
+      if (result.data?.success) {
+        dispatch(setIsSeller(true));
         navigate("/seller/Dashboard");
       } else {
-        toast.error(data.message);
+        toast.error(result.data?.message || "Unable to login");
       }
     } catch (error) {
       toast.error(error.message);

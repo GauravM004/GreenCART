@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useAppContext } from "../context/AppContext";
+import { useAppSelector } from "../app/hooks";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { Check, X } from "lucide-react";
+import { useUpdateProfileMutation } from "../features/auth/authApi";
 
 const MyProfile = () => {
-  const { user, axios } = useAppContext();
+  const user = useAppSelector((state) => state.auth.user);
+  const navigate = useNavigate();
+  const [updateProfile] = useUpdateProfileMutation();
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
   console.log(user);
@@ -22,18 +26,24 @@ const MyProfile = () => {
         phone: user.phone || "9328567210",
       });
     }
+   if (!user) {
+      toast.error("You are unauthenticated. Please login to view your profile");
+      return navigate("/");
+    }
   }, [user]);
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
-  const handleSave = async () => {
+  const handleUpdateSave = async () => {
     setSaving(true);
     try {
-      const { data } = await axios.put("/api/user/update-profile", formData);
-      if (data.success) {
+      const result = await updateProfile(formData);
+      if (result.data?.success) {
         toast.success("Profile updated successfully");
         setEditMode(false);
+      } else {
+        toast.error(result.data?.message || "Failed to update profile");
       }
     } catch {
       toast.error("Failed to update profile");

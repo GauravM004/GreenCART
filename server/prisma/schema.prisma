@@ -1,0 +1,178 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Provider {
+  local
+  google
+}
+
+enum OrderStatus {
+  pending
+  accepted
+  assigning_delivery
+  out_for_delivery
+  delivered
+}
+
+enum PaymentType {
+  COD
+  Razorpay
+}
+
+enum ChangedBy {
+  admin
+  system
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String?
+  googleId  String?  @unique
+  provider  Provider @default(local)
+  phone     String   @default("")
+  firstName String?
+  lastName  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  addresses Address[]
+  orders    Order[]
+  cartItems CartItem[]
+
+  @@map("users")
+}
+
+// Replaces Mongoose User.cartItems (Object blob) with a real join table.
+model CartItem {
+  id        String @id @default(uuid())
+  quantity  Int
+
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, productId]) // one row per user/product, quantity holds the count
+  @@map("cart_items")
+}
+
+model Address {
+  id        String @id @default(uuid())
+  firstName String
+  lastName  String
+  email     String
+  street    String
+  city      String
+  state     String
+  zipcode   Int
+  country   String
+  phone     String
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  orders Order[]
+
+  @@map("addresses")
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String[] // was Mongoose Array of strings -> native Postgres array
+  price       Float
+  offerPrice  Float
+  image       String[] // was Mongoose Array of strings -> native Postgres array
+  category    String
+  inStock     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+  cartItems  CartItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  amount      Float
+  status      OrderStatus @default(pending)
+  paymentType PaymentType
+  isPaid      Boolean     @default(false)
+  transactionId String?
+
+  deliveryPartnerId    String?
+  deliveryPartnerName  String?
+  deliveryPartnerPhone String?
+  estimatedDeliveryDate DateTime?
+
+  rating   Int?     // 1-5, enforce range in application layer (Prisma has no column check by default)
+  review   String?
+  isRated  Boolean  @default(false)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  addressId String
+  address   Address @relation(fields: [addressId], references: [id])
+
+  items         OrderItem[]
+  statusHistory OrderStatusHistory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("orders")
+}
+
+// Replaces Mongoose Order.items embedded array -> many-to-many join table.
+model OrderItem {
+  id       String @id @default(uuid())
+  quantity Int
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// Replaces Mongoose Order.statusHistory embedded array -> one-to-many join table.
+model OrderStatusHistory {
+  id        String      @id @default(uuid())
+  status    OrderStatus
+  timestamp DateTime    @default(now())
+  changedBy ChangedBy   @default(admin)
+  note      String?
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_status_history")
+}
+
+model ContactUs {
+  id        String   @id @default(uuid())
+  name      String
+  email     String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contact_us")
+}

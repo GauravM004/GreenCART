@@ -1,10 +1,15 @@
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import { assets } from "../../assets/assets";
-import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
+import { useAppSelector, useAppDispatch } from "../../app/hooks";
+import { selectIsSeller, setIsSeller } from "../../features/auth/authSlice";
+import { useLogoutSellerMutation } from "../../features/auth/authApi";
 
 const SellerLayout = () => {
-  const { axios, navigate, isSeller } = useAppContext();
+  const isSeller = useAppSelector(selectIsSeller);
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const [logoutSeller] = useLogoutSellerMutation();
 
   const sidebarLinks = [
     { name: "Add Product", path: "/seller", icon: assets.add_icon },
@@ -15,16 +20,19 @@ const SellerLayout = () => {
       icon: assets.product_list_icon,
     },
     { name: "Orders", path: "/seller/orders", icon: assets.order_icon },
+    { name: "Contact Us", path: "/seller/contact-us", icon: assets.contact_icon },
   ];
 
   const logout = async () => {
     try {
-      const { data } = await axios.get("/api/seller/logout");
-      if (data.success) {
-        toast.success(data.message);
+      const result = await logoutSeller();
+      if (result.data?.success) {
+        localStorage.removeItem("token");
+        dispatch(setIsSeller(false));
+        toast.success(result.data.message);
         navigate("/");
       } else {
-        toast.error(data.message);
+        toast.error(result.data?.message || "Unable to logout");
       }
     } catch (error) {
       toast.error(error.message);

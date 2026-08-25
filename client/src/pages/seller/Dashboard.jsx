@@ -1,91 +1,70 @@
-import React, { useEffect, useState } from "react";
-import { useAppContext } from "../../context/AppContext";
-import toast from "react-hot-toast";
-import { 
-  TrendingUp, 
-  ShoppingCart, 
-  DollarSign, 
-  Clock, 
+import React from "react";
+import {
+  TrendingUp,
+  ShoppingCart,
+  DollarSign,
+  Clock,
   AlertTriangle,
   Package,
-  Users,
   Calendar,
   ArrowUp,
   ArrowDown,
   Activity,
   CheckCircle,
   Truck,
-  Eye
+  Eye,
 } from "lucide-react";
+import { useGetDashboardDataQuery } from "../../features/seller/sellerApi";
 
 const Dashboard = () => {
-  const [DashboardData, setDashBoardData] = useState([]);
-  const { axios } = useAppContext();
-
-  const DashboardDataFetch = async () => {
-    try {
-      const { data } = await axios.get("/api/admin/dashboard");
-      if (data.success) {
-        setDashBoardData(data);
-        console.log(data);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (err) {
-      console.log(err.message);
-    }
-  };
-
-  useEffect(() => {
-    DashboardDataFetch();
-  }, []);
+  const { data: DashboardData, isLoading, isError } = useGetDashboardDataQuery();
 
   const formatStatus = (status) => {
     switch (status) {
       case "Order Placed":
-        return { 
-          label: "Order Placed", 
+        return {
+          label: "Order Placed",
           color: "yellow",
           bg: "bg-yellow-100",
           text: "text-yellow-700",
           border: "border-yellow-200",
-          icon: <Clock className="w-3.5 h-3.5" />
+          icon: <Clock className="w-3.5 h-3.5" />,
         };
       case "Processing":
-        return { 
-          label: "Processing", 
+        return {
+          label: "Processing",
           color: "blue",
           bg: "bg-blue-100",
           text: "text-blue-700",
           border: "border-blue-200",
-          icon: <Activity className="w-3.5 h-3.5" />
+          icon: <Activity className="w-3.5 h-3.5" />,
         };
       case "Shipped":
-        return { 
-          label: "Dispatched", 
+        return {
+          label: "Dispatched",
           color: "purple",
           bg: "bg-purple-100",
           text: "text-purple-700",
           border: "border-purple-200",
-          icon: <Truck className="w-3.5 h-3.5" />
+          icon: <Truck className="w-3.5 h-3.5" />,
         };
       case "Delivered":
-        return { 
-          label: "Delivered", 
+        return {
+          label: "Delivered",
           color: "green",
           bg: "bg-green-100",
           text: "text-green-700",
           border: "border-green-200",
-          icon: <CheckCircle className="w-3.5 h-3.5" />
+          icon: <CheckCircle className="w-3.5 h-3.5" />,
         };
       default:
-        return { 
-          label: status, 
+        return {
+          label: status,
           color: "gray",
           bg: "bg-gray-100",
           text: "text-gray-700",
           border: "border-gray-200",
-          icon: <Package className="w-3.5 h-3.5" />
+          icon: <Package className="w-3.5 h-3.5" />,
         };
     }
   };
@@ -96,6 +75,22 @@ const Dashboard = () => {
       month: "short",
       year: "numeric",
     });
+
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-8 min-h-screen flex items-center justify-center text-gray-500">
+        Loading dashboard...
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="p-4 md:p-8 min-h-screen flex items-center justify-center text-red-500">
+        Failed to load dashboard data.
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-8 bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 min-h-screen">
@@ -116,9 +111,9 @@ const Dashboard = () => {
           <div className="flex items-center gap-2 text-sm">
             <Calendar className="w-4 h-4 text-gray-500" />
             <span className="text-gray-600 font-medium">
-              {new Date().toLocaleDateString('en-US', { 
-                weekday: 'long', 
-                month: 'long', 
+              {new Date().toLocaleDateString('en-US', {
+                weekday: 'long',
+                month: 'long',
                 day: 'numeric',
                 year: 'numeric'
               })}
@@ -142,7 +137,7 @@ const Dashboard = () => {
           },
           {
             label: "Total Revenue",
-            value: `₹${DashboardData?.stats?.totalRevenue  || '17,350'}`,
+            value: `₹${DashboardData?.stats?.totalRevenue || '17,350'}`,
             gradient: "from-emerald-500 to-green-600",
             icon: <DollarSign className="w-6 h-6" />,
             trend: "+23%",
@@ -177,10 +172,10 @@ const Dashboard = () => {
           >
             {/* Animated gradient bar */}
             <div className={`absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r ${item.gradient}`} />
-            
+
             {/* Background decoration */}
             <div className={`absolute -right-8 -bottom-8 w-32 h-32 bg-gradient-to-br ${item.gradient} opacity-5 rounded-full group-hover:scale-150 transition-transform duration-500`} />
-            
+
             <div className="flex items-start justify-between mb-4">
               <div className={`w-14 h-14 ${item.bgIcon} rounded-xl flex items-center justify-center ${item.textIcon} shadow-sm`}>
                 {item.icon}
@@ -190,7 +185,7 @@ const Dashboard = () => {
                 {item.trend}
               </div>
             </div>
-            
+
             <p className="text-sm text-gray-500 font-medium mb-1">{item.label}</p>
             <p className="text-3xl font-bold text-gray-900">
               {item.value}
@@ -267,7 +262,7 @@ const Dashboard = () => {
               <line x1="0" y1="25" x2="300" y2="25" stroke="#f0f0f0" strokeWidth="1" />
               <line x1="0" y1="50" x2="300" y2="50" stroke="#f0f0f0" strokeWidth="1" />
               <line x1="0" y1="75" x2="300" y2="75" stroke="#f0f0f0" strokeWidth="1" />
-              
+
               {/* Gradient area under line */}
               <defs>
                 <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
@@ -279,12 +274,12 @@ const Dashboard = () => {
                   <stop offset="100%" stopColor="#14b8a6" />
                 </linearGradient>
               </defs>
-              
+
               <polygon
                 fill="url(#areaGradient)"
                 points="0,80 40,60 80,65 120,40 160,50 200,30 240,35 280,20 280,100 0,100"
               />
-              
+
               <polyline
                 fill="none"
                 stroke="url(#lineGradient)"
@@ -293,7 +288,7 @@ const Dashboard = () => {
                 strokeLinejoin="round"
                 points="0,80 40,60 80,65 120,40 160,50 200,30 240,35 280,20"
               />
-              
+
               {/* Data points */}
               {[[0,80], [40,60], [80,65], [120,40], [160,50], [200,30], [240,35], [280,20]].map(([x, y], i) => (
                 <circle key={i} cx={x} cy={y} r="4" fill="#10b981" className="hover:r-6 transition-all" />

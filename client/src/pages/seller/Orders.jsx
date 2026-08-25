@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
+import OrderStatusUpdateModal from "../../components/OrderStatusUpdateModal";
+import { useGetSellerOrdersQuery } from "../../features/orders/orderApi";
 import {
   Package,
   Clock,
@@ -20,29 +21,31 @@ import {
 } from "lucide-react";
 
 const Orders = () => {
-  const { currency, axios } = useAppContext();
+  const currency = import.meta.env.VITE_CURRENCY;
+  const { data: ordersData, isLoading, refetch } = useGetSellerOrdersQuery();
+  const [updateSellerOrderStatus] = useUpdateSellerOrderStatusMutation();
   const [orders, setOrders] = useState([]);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
-
-  const fetchOrders = async () => {
-    try {
-      const { data } = await axios.get("/api/order/seller");
-      if (data.success) {
-        setOrders(data.orders);
-        console.log("Orders JSON Data", data.orders);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState(null);
 
   useEffect(() => {
-    fetchOrders();
-    console.log("Orders JSON Data", orders);
-  }, []);
+    if (ordersData?.success) {
+      setOrders(ordersData.orders);
+    }
+  }, [ordersData]);
+
+  const handleUpdateStatusClick = (order) => {
+    setSelectedOrder(order);
+    setIsModalOpen(true);
+  };
+
+  const handleStatusUpdate = async () => {
+    setIsModalOpen(false);
+    await refetch();
+    toast.success("Order status updated successfully!");
+  };
 
   const adminStatusLabel = (status) => {
     switch (status) {
@@ -339,35 +342,41 @@ const Orders = () => {
                   </div>
 
                   {/* Customer & Delivery Info */}
-                  <div className="p-5 bg-gray-50">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="flex gap-3">
+                  <div className="p-5 bg-white border-t border-gray-100">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* Customer */}
+                      <div className="flex gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-indigo-200 transition">
                         <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <User className="w-5 h-5 text-green-600" />
                         </div>
+
                         <div>
                           <p className="text-xs text-gray-500 mb-1 font-medium">
                             Customer
                           </p>
+
                           <p className="font-semibold text-gray-900">
                             {order.address?.firstName} {order.address?.lastName}
                           </p>
+
                           <div className="flex items-center gap-1.5 mt-1 text-sm text-gray-600">
-                            <Phone className="w-3.5 h-3.5 " />
+                            <Phone className="w-3.5 h-3.5" />
                             {order.address?.phone}
                           </div>
                         </div>
                       </div>
 
                       {/* Delivery Address */}
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-indigo-200 transition">
                         <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <MapPin className="w-5 h-5 text-green-600" />
                         </div>
+
                         <div>
                           <p className="text-xs text-gray-500 mb-1 font-medium">
                             Delivery Address
                           </p>
+
                           <p className="text-sm text-gray-700 leading-relaxed">
                             {order.address?.street}, {order.address?.city}
                             <br />
@@ -376,21 +385,24 @@ const Orders = () => {
                         </div>
                       </div>
 
-                      {/* Order Details */}
-                      <div className="flex gap-3">
+                      {/* Order / Payment Details */}
+                      <div className="flex gap-3 p-4 rounded-xl bg-gray-50 border border-gray-200 hover:border-indigo-200 transition">
                         <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                           <Calendar className="w-5 h-5 text-green-600" />
                         </div>
+
                         <div>
                           <p className="text-xs text-gray-500 mb-1 font-medium">
                             Order Details
                           </p>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-1.5 text-sm text-gray-700">
+
+                          <div className="space-y-1 text-sm text-gray-700">
+                            <div className="flex items-center gap-1.5">
                               <CreditCard className="w-3.5 h-3.5" />
                               {order.paymentType}
                             </div>
-                            <div className="flex items-center gap-1.5 text-sm text-gray-700">
+
+                            <div className="flex items-center gap-1.5">
                               <Calendar className="w-3.5 h-3.5" />
                               {new Date(order.createdAt).toLocaleDateString(
                                 "en-US",
@@ -398,7 +410,7 @@ const Orders = () => {
                                   month: "short",
                                   day: "numeric",
                                   year: "numeric",
-                                }
+                                },
                               )}
                             </div>
                           </div>
@@ -411,13 +423,16 @@ const Orders = () => {
                   <div className="p-5 bg-gradient-to-r from-indigo-50 to-purple-50 border-t border-indigo-100">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                       <div className="flex gap-2">
-                        <button className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-600 transition font-medium text-sm flex items-center gap-2 cursor-pointer">
+                        <button
+                          onClick={() => handleUpdateStatusClick(order)}
+                          className="px-4 py-2 bg-green-400 text-white rounded-lg hover:bg-green-600 transition font-medium text-sm flex items-center gap-2 cursor-pointer"
+                        >
                           <ChevronDown className="w-4 h-4" />
                           Update Status
                         </button>
                         <button className="px-4 py-2 border-2 border-indigo-200 text-green-600 rounded-lg hover:bg-indigo-50 transition font-medium text-sm flex items-center gap-2 cursor-pointer">
-                          <Eye className="w-4 h-4" />
-                          View Details
+                          <ChevronDown className="w-4 h-4" />
+                          Update Payment Details
                         </button>
                       </div>
 
@@ -438,12 +453,15 @@ const Orders = () => {
           )}
         </div>
 
-        {/* Results Summary */}
-        {filteredOrders.length > 0 && (
-          <div className="mt-6 text-center text-sm text-gray-500">
-            Showing {filteredOrders.length} of {orders.length} orders
-          </div>
-        )}
+        {/* Status Update Modal */}
+        <OrderStatusUpdateModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          orderId={selectedOrder?._id}
+          currentStatus={selectedOrder?.status}
+          onStatusUpdate={handleStatusUpdate}
+          api={api}
+        />
       </div>
     </div>
   );

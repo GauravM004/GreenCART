@@ -1,34 +1,49 @@
 import React, { useState } from "react";
-import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
 import { Package, TrendingUp, Search, Filter, Calendar, Tag } from "lucide-react";
+import { useGetProductsQuery, useUpdateProductStockMutation } from "../../features/products/productApi";
 
 const ProductList = () => {
-  const { products, currency, axios, fetchProducts } = useAppContext();
+  const currency = import.meta.env.VITE_CURRENCY;
   const [searchTerm, setSearchTerm] = useState("");
+  const { data, isLoading, isError } = useGetProductsQuery();
+  const products = data?.products || [];
+  const [updateProductStock] = useUpdateProductStockMutation();
 
   const toggleStock = async (id, inStock) => {
     try {
-      const { data } = await axios.post("/api/product/stock", { id, inStock });
-      if (data.success) {
-        fetchProducts();
-        toast.success(data.message);
-      } else {
-        toast.error(data.message);
-      }
+      const result = await updateProductStock({ id, inStock }).unwrap();
+      toast.success(result?.message || "Stock updated");
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error?.data?.message || "Failed to update stock");
     }
   };
 
   const totalProducts = products.length;
-  const inStockCount = products.filter(p => p.inStock).length;
+  const inStockCount = products.filter((p) => p.inStock).length;
   const outOfStockCount = totalProducts - inStockCount;
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    product.category.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProducts = products.filter(
+    (product) =>
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isLoading) {
+    return (
+      <div className="flex-1 h-[95vh] flex items-center justify-center text-gray-500">
+        Loading products...
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex-1 h-[95vh] flex items-center justify-center text-red-500">
+        Failed to load products.
+      </div>
+    );
+  }
 
   return (
     <div className="no-scrollbar flex-1 h-[95vh] overflow-y-scroll bg-gradient-to-br from-gray-50 to-gray-100">

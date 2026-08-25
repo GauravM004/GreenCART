@@ -1,13 +1,19 @@
 import express from 'express';
-import authUser from '../middlewares/authUser.js';
-import { getAllOrders, getUserOrders, placeOrderCOD, placeOrderStripe } from '../controllers/orderController.js';
-import authSeller from '../middlewares/authSeller.js';
+import authenticateUser from '../middlewares/authUser.js';
+import { getAllOrders, getUserOrders, placeOrderCOD, placeOrderRazorpay, verifyRazorpayPayment, updateOrderStatus, submitOrderRating } from '../controllers/orderController.js';
+import verifySeller from '../middlewares/authSeller.js';
 
 const orderRouter = express.Router();
 
-orderRouter.post('/cod', authUser, placeOrderCOD)
-orderRouter.get('/user', authUser, getUserOrders)
-orderRouter.get('/seller', authSeller, getAllOrders)
-orderRouter.post('/stripe', authUser, placeOrderStripe)
+// Specific routes first (before parameter routes)
+orderRouter.post('/cod', authenticateUser, placeOrderCOD)
+orderRouter.post('/razorpay', authenticateUser, placeOrderRazorpay)
+orderRouter.post('/razorpay/verify', authenticateUser, verifyRazorpayPayment)
+orderRouter.get('/user', authenticateUser, getUserOrders)
+orderRouter.get('/seller', verifySeller, getAllOrders)
+
+// Parameter routes after specific routes
+orderRouter.put('/:orderId/status', verifySeller, updateOrderStatus)
+orderRouter.post('/:orderId/rating', authenticateUser, submitOrderRating)
 
 export default orderRouter;

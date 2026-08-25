@@ -10,8 +10,9 @@ import productRouter from './routes/productRoute.js';
 import cartRouter from './routes/cartRoute.js';
 import addressRouter from './routes/addressRoute.js';
 import orderRouter from './routes/orderRoute.js';
+import contactUsRouter from './routes/ContactUsRoute.js'; 
 import adminDashboardRouter from './routes/adminDashboardRoute.js'
-import { stripeWebhooks } from './controllers/orderController.js';
+import { razorpayWebhooks } from './controllers/orderController.js';
 import session from "express-session";
 import passport from "passport";
 import "./configs/passport.js";
@@ -23,9 +24,9 @@ await connectDB()
 await connectCloudinary()
 
 // Allow multiple origins
-const allowedOrigins = ['http://localhost:5173', '']
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', '']
 
-app.post('/stripe', express.raw({type: 'application/json'}), stripeWebhooks)
+app.post('/razorpay', express.raw({type: 'application/json'}), razorpayWebhooks)
 
 app.use(session({
   secret: "oauth-secret",
@@ -50,6 +51,7 @@ app.use('/api/product', productRouter)
 app.use('/api/cart', cartRouter)
 app.use('/api/address', addressRouter)
 app.use('/api/order', orderRouter)
+app.use('/api/contact-us', contactUsRouter)
 app.use('/api/admin', adminDashboardRouter)
 app.listen(port, ()=>{
     console.log(`Server is running on http://localhost:${port}`)

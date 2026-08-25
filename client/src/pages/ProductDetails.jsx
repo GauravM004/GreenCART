@@ -1,18 +1,26 @@
 import { useEffect, useState } from "react";
-import { useAppContext } from "../context/AppContext";
-import { Link, useParams } from "react-router-dom";
+import { useAppSelector, useAppDispatch } from "../app/hooks";
+import { selectAuthUser } from "../features/auth/authSlice";
+import { useGetProductsQuery } from "../features/products/productApi";
+import { addToCart } from "../features/cart/cartSlice";
+import { Link, useParams, useNavigate } from "react-router-dom";
 import { assets } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
 import toast from "react-hot-toast";
 
 const ProductDetails = () => {
-  const { user, products, navigate, currency, addToCart } = useAppContext();
   const { id } = useParams();
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const currency = import.meta.env.VITE_CURRENCY;
+  const user = useAppSelector(selectAuthUser);
+  const { data: productsData, isLoading } = useGetProductsQuery();
+  const products = productsData?.success ? productsData.products : [];
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [thumbnail, setThumbnail] = useState(null);
 
   const product = products.find((p) => p._id === id);
- console.log(product);
+
   useEffect(() => {
     if (products.length && product) {
       const related = products.filter(
@@ -26,7 +34,21 @@ const ProductDetails = () => {
     setThumbnail(product?.image?.[0] || null);
   }, [product]);
 
-  if (!product) return null;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <p className="text-gray-500">Loading product...</p>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return (
+      <div className="flex items-center justify-center h-[60vh]">
+        <p className="text-2xl font-medium text-primary">Product not found.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-12">
@@ -74,7 +96,7 @@ const ProductDetails = () => {
             ))}
           </div>
 
-          <div className="rounded-xl p-4 w-[320px] h-[320px] flex items-center justify-cente bg-gray-50">
+          <div className="rounded-xl p-4 w-[320px] h-[320px] flex items-center justify-center bg-gray-50">
             <img
               src={thumbnail}
               alt={product.name}
@@ -135,7 +157,7 @@ const ProductDetails = () => {
                   toast.error("Before placing your order, please login first!");
                   return;
                 }
-                addToCart(product._id);
+                dispatch(addToCart(product._id));
               }}
               className="
     flex-1 py-3 rounded-lg font-medium
@@ -151,7 +173,7 @@ const ProductDetails = () => {
                 if (!user) {
                   toast.error("Before placing your order, please login first!");
                 } else {
-                  addToCart(product._id);
+                  dispatch(addToCart(product._id));
                   navigate("/cart");
                 }
               }}
@@ -185,7 +207,7 @@ const ProductDetails = () => {
         <button
           onClick={() => {
             navigate("/products");
-            scrollTo(0, 0);
+            window.scrollTo(0, 0);
           }}
           className="block mx-auto mt-14 px-10 py-2.5 border rounded-lg text-primary hover:bg-primary/10 transition"
         >

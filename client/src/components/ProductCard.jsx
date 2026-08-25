@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import { assets } from "../assets/assets";
-import { useAppContext } from "../context/AppContext";
+import { useAppSelector, useAppDispatch } from "../app/hooks";
+import { addToCart, removeFromCart } from "../features/cart/cartSlice";
+import { useNavigate } from "react-router-dom";
 import { ShoppingCart, Heart, Zap } from "lucide-react";
 
 const ProductCard = ({ product }) => {
-  const { currency, addToCart, removeFromCart, cartItems, navigate } =
-    useAppContext();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const currency = import.meta.env.VITE_CURRENCY;
+  const cartItems = useAppSelector((state) => state.cart.cartItems);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -99,7 +103,7 @@ const ProductCard = ({ product }) => {
           <div onClick={(e) => e.stopPropagation()}>
             {!cartItems[product._id] ? (
               <button
-                onClick={() => addToCart(product._id)}
+                onClick={() => dispatch(addToCart(product._id))}
                 className="px-3 py-1.5 text-primary border border-primary/40 bg-primary/10 text-xs font-medium rounded-lg hover:bg-primary/20 transition cursor-pointer whitespace-nowrap"
               >
                 ADD
@@ -107,14 +111,14 @@ const ProductCard = ({ product }) => {
             ) : (
               <div className="flex items-center bg-primary/20 rounded-lg overflow-hidden">
                 <button
-                  onClick={() => removeFromCart(product._id)}
+                  onClick={() => dispatch(removeFromCart(product._id))}
                   className="px-2 py-1 cursor-pointer"
                 >
                   −
                 </button>
                 <span className="px-2 text-sm">{cartItems[product._id]}</span>
                 <button
-                  onClick={() => addToCart(product._id)}
+                  onClick={() => dispatch(addToCart(product._id))}
                   className="px-2 py-1 cursor-pointer"
                 >
                   +
