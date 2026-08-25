@@ -1,30 +1,18 @@
-// import express from 'express';
-// import { isAuth, login, logout, register,updateProfile } from '../controllers/userController.js';
-// import authUser from '../middlewares/authUser.js';
 
-// const userRouter = express.Router();
-
-// userRouter.post('/register', register)
-// userRouter.post('/login', login)
-// userRouter.get('/is-auth', authUser, isAuth)
-// userRouter.get('/logout', authUser, logout)
-// userRouter.put('/update-profile',authUser,updateProfile)
-
-// export default userRouter
 
 import express from "express";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 import { isAuth, login, logout, register, updateProfile } from "../controllers/userController.js";
-import authUser from "../middlewares/authUser.js";
+import authenticateUser from "../middlewares/authUser.js";
 
 const userRouter = express.Router();
 
 userRouter.post("/register", register);
 userRouter.post("/login", login);
-userRouter.get("/is-auth", authUser, isAuth);
-userRouter.get("/logout", authUser, logout);
-userRouter.put("/update-profile", authUser, updateProfile);
+userRouter.get("/is-auth", authenticateUser, isAuth);
+userRouter.get("/logout", authenticateUser, logout);
+userRouter.put("/update-profile", authenticateUser, updateProfile);
 
 // Google OAuth
 userRouter.get(
@@ -37,7 +25,7 @@ userRouter.get(
   passport.authenticate("google", { failureRedirect: "/login" }),
   async (req, res) => {
     const token = jwt.sign(
-      { userId: req.user._id },
+      { userId: req.user.id },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );

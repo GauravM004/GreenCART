@@ -1,25 +1,25 @@
 import { useEffect, useState } from "react";
-import { useAppContext } from "../context/AppContext";
-import { assets, dummyAddress } from "../assets/assets";
+import { useAppSelector, useAppDispatch } from "../app/hooks";
+import { selectCartCount, selectCartAmount, removeFromCart, updateCartItem, setCartItems, selectCartItems } from "../features/cart/cartSlice";
+import { selectAuthUser } from "../features/auth/authSlice";
+import { useGetProductsQuery } from "../features/products/productApi";
+import { useNavigate } from "react-router-dom";
+import { assets } from "../assets/assets";
 import toast from "react-hot-toast";
 import SuccessPage from "../components/SuccessPage";
+import { useGetAddressesQuery } from "../features/address/addressApi";
+import { usePlaceCodOrderMutation, usePlaceStripeOrderMutation } from "../features/orders/orderApi";
 
 const Cart = () => {
-  const {
-    products,
-    currency,
-    cartItems,
-    removeFromCart,
-    getCartCount,
-    updateCartItem,
-    navigate,
-    getCartAmount,
-    api,
-    user,
-    setCartItems,
-  } = useAppContext();
-  console.log("product", products);
-  const cartAmount = getCartAmount();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const currency = import.meta.env.VITE_CURRENCY;
+  const { data: productsData } = useGetProductsQuery();
+  const products = productsData?.success ? productsData.products : [];
+  const cartItems = useAppSelector(selectCartItems);
+  const cartCount = useAppSelector(selectCartCount);
+  const cartAmount = useAppSelector(selectCartAmount);
+  const user = useAppSelector(selectAuthUser);
 
   const MAX_SHIPPING_FEE = 80;
 
@@ -28,36 +28,23 @@ const Cart = () => {
   const tax = (cartAmount * 2) / 100;
   const totalAmount = cartAmount + shippingFee + tax;
   const [cartArray, setCartArray] = useState([]);
-  const [addresses, setAddresses] = useState([]);
   const [showAddress, setShowAddress] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState(null);
   const [paymentOption, setPaymentOption] = useState("COD");
   const [orderPlaced, setOrderPlaced] = useState(false);
+  const { data: addressData } = useGetAddressesQuery();
+  const [placeCodOrder] = usePlaceCodOrderMutation();
+  const [placeStripeOrder] = usePlaceStripeOrderMutation();
+  const addresses = addressData?.success ? addressData.addresses : [];
 
   const getCart = () => {
     let tempArray = [];
     for (const key in cartItems) {
       const product = products.find((item) => item._id === key);
-      product.quantity = cartItems[key];
-      tempArray.push(product);
+      if (!product) continue;
+      tempArray.push({ ...product, quantity: cartItems[key] });
     }
     setCartArray(tempArray);
-  };
-
-  const getUserAddress = async () => {
-    try {
-      const { data } = await api.get("/api/address/get");
-      if (data.success) {
-        setAddresses(data.addresses);
-        if (data.addresses.length > 0) {
-          setSelectedAddress(data.addresses[0]);
-        }
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
   };
 
   const placeOrder = async () => {
@@ -68,8 +55,7 @@ const Cart = () => {
 
       // Place Order with COD
       if (paymentOption === "COD") {
-        const { data } = await api.post("/api/order/cod", {
-          userId: user._id,
+        const result = await placeCodOrder({
           items: cartArray.map((item) => ({
             product: item._id,
             quantity: item.quantity,
@@ -77,18 +63,15 @@ const Cart = () => {
           address: selectedAddress._id,
         });
 
-        if (data.success) {
+        if (result.data?.success) {
           setOrderPlaced(true);
-          toast.success(data.message);
-          setCartItems({});
-          // navigate("/my-orders");
+          toast.success(result.data.message);
+          dispatch(setCartItems({}));
         } else {
-          toast.error(data.message);
+          toast.error(result.data?.message || "Unable to place order");
         }
       } else {
-        // Place Order with Stripe
-        const { data } = await api.post("/api/order/stripe", {
-          userId: user._id,
+        const result = await placeStripeOrder({
           items: cartArray.map((item) => ({
             product: item._id,
             quantity: item.quantity,
@@ -96,11 +79,11 @@ const Cart = () => {
           address: selectedAddress._id,
         });
 
-        if (data.success) {
+        if (result.data?.success) {
           setOrderPlaced(true);
-          window.location.replace(data.url);
+          window.location.replace(result.data.url);
         } else {
-          toast.error(data.message);
+          toast.error(result.data?.message || "Unable to place order");
         }
       }
     } catch (error) {
@@ -113,7 +96,7 @@ const Cart = () => {
       toast.error("Your cart is already empty");
       return;
     }
-    setCartItems({});
+    dispatch(setCartItems({}));
     setCartArray([]);
     toast.success("Cart Cleared Successfully");
     navigate("/products");
@@ -126,24 +109,17 @@ const Cart = () => {
   }, [products, cartItems]);
 
   useEffect(() => {
-    if (user) {
-      getUserAddress();
+    if (addresses.length > 0 && !selectedAddress) {
+      setSelectedAddress(addresses[0]);
     }
-  }, [user, cartArray]);
+  }, [addresses, selectedAddress]);
 
   useEffect(() => {
-    if(!user){
+    if (!user) {
       toast.error("You are unauthenticated. Please login to view your cart");
-      return navigate("/");
+      navigate("/");
     }
   }, [user]);
-    
-
- useEffect(() => {
-  if (Object.keys(cartItems).length === 0 && !orderPlaced) {
-    // toast.error("Your cart is empty, please add items to proceed.");
-  }
-}, [cartItems]);
 
   if (orderPlaced) {
     return <SuccessPage selectedAddress={selectedAddress} navigate={navigate} />;
@@ -155,7 +131,7 @@ const Cart = () => {
         <div className="flex items-center gap-20 mb-3">
           <h1 className="text-3xl font-medium">
             Shopping Cart{" "}
-            <span className="text-sm text-primary">{getCartCount()} Items</span>
+            <span className="text-sm text-primary">{cartCount} Items</span>
           </h1>
 
           <button
@@ -172,9 +148,9 @@ const Cart = () => {
           <p className="text-center">Action</p>
         </div>
 
-        {cartArray.map((product, index) => (
+        {cartArray.map((product) => (
           <div
-            key={index}
+            key={product._id}
             className="grid grid-cols-[2fr_1fr_1fr] text-gray-500 items-center text-sm md:text-base font-medium pt-3"
           >
             <div className="flex items-center md:gap-6 gap-3">
@@ -183,7 +159,7 @@ const Cart = () => {
                   navigate(
                     `/products/${product.category.toLowerCase()}/${product._id}`
                   );
-                  scrollTo(0, 0);
+                  window.scrollTo(0, 0);
                 }}
                 className="cursor-pointer w-24 h-24 flex items-center justify-center border border-gray-300 rounded"
               >
@@ -196,14 +172,11 @@ const Cart = () => {
               <div>
                 <p className="hidden md:block font-semibold">{product.name}</p>
                 <div className="font-normal text-gray-500/70">
-                  {/* <p>
-                    Weight: <span>{product.weight || "N/A"}</span>
-                  </p> */}
                   <div className="flex items-center">
                     <p>Qty:</p>
                     <select
                       onChange={(e) =>
-                        updateCartItem(product._id, Number(e.target.value))
+                        dispatch(updateCartItem({ itemId: product._id, quantity: Number(e.target.value) }))
                       }
                       value={cartItems[product._id]}
                       className="outline-none"
@@ -227,7 +200,7 @@ const Cart = () => {
               {product.offerPrice * product.quantity}
             </p>
             <button
-              onClick={() => removeFromCart(product._id)}
+              onClick={() => dispatch(removeFromCart(product._id))}
               className="cursor-pointer mx-auto"
             >
               <img
@@ -242,7 +215,7 @@ const Cart = () => {
         <button
           onClick={() => {
             navigate("/products");
-            scrollTo(0, 0);
+            window.scrollTo(0, 0);
           }}
           className="group cursor-pointer flex items-center mt-8 gap-2 text-primary font-medium"
         >
@@ -275,8 +248,9 @@ const Cart = () => {
             </button>
             {showAddress && (
               <div className="absolute top-12 py-1 bg-white border border-gray-300 text-sm w-full">
-                {addresses.map((address, index) => (
+                {addresses.map((address) => (
                   <p
+                    key={address._id}
                     onClick={() => {
                       setSelectedAddress(address);
                       setShowAddress(false);
@@ -317,7 +291,7 @@ const Cart = () => {
             <span>Price</span>
             <span>
               {currency}
-              {getCartAmount()}
+              {cartAmount}
             </span>
           </p>
           <p className="flex justify-between">

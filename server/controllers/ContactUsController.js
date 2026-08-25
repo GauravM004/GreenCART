@@ -1,11 +1,10 @@
-import ContactUs from "../models/ContactUs.js";
+import * as contactUsService from "../services/contactUsService.js";
 
-//POST:  /api/contact-us/submit
+// POST: /api/contact-us/submit
 export const PostContactForm = async (req, res) => {
   try {
     const { name, email, message } = req.body;
-    const contactUs = new ContactUs({ name, email, message });
-    await contactUs.save();
+    await contactUsService.submitContactForm(name, email, message);
     res.status(201).json({
       success: true,
       message: "Contact form submitted successfully",
@@ -19,10 +18,10 @@ export const PostContactForm = async (req, res) => {
   }
 };
 
-//GET: /api/contact-us/all
+// GET: /api/contact-us/all
 export const GetContactForms = async (req, res) => {
   try {
-    const contactForms = await ContactUs.find().sort({ createdAt: -1 });
+    const contactForms = await contactUsService.getAllContactForms();
     res.status(200).json({
       success: true,
       data: contactForms,
@@ -36,11 +35,11 @@ export const GetContactForms = async (req, res) => {
   }
 };
 
-//DELETE: /api/contact-us/:id
+// DELETE: /api/contact-us/:id
 export const DeleteContactForm = async (req, res) => {
   try {
     const { id } = req.params;
-    await ContactUs.findByIdAndDelete(id);
+    await contactUsService.deleteContactForm(id);
     res.status(200).json({
       success: true,
       message: "Contact form deleted successfully",

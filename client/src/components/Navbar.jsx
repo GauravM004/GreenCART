@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 import { assets } from "../assets/assets";
-import { useAppContext } from "../context/AppContext";
+import { useAppSelector, useAppDispatch } from "../app/hooks";
+import { setSearchQuery, selectSearchQuery } from "../features/ui/uiSlice";
+import { setCartItems, selectCartCount, selectCartItems } from "../features/cart/cartSlice";
+import { logout as logoutAction, selectAuthUser } from "../features/auth/authSlice";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useLogoutUserMutation } from "../features/auth/authApi";
 
 
-const LoginModal = ({ showModal, setShowModal, api, navigate }) => {
+const LoginModal = ({ showModal, setShowModal }) => {
   const handleGoogleLogin = () => {
     window.location.href = "http://localhost:4000/api/user/auth/google";
   };
@@ -145,30 +150,25 @@ const LoginModal = ({ showModal, setShowModal, api, navigate }) => {
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const {
-    user,
-    navigate,
-    setSearchQuery,
-    searchQuery,
-    getCartCount,
-    api,
-    setCartItems,
-    setUser,
-  } = useAppContext();
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const user = useAppSelector(selectAuthUser);
+  const searchQuery = useAppSelector(selectSearchQuery);
+  const cartCount = useAppSelector(selectCartCount);
+  const cartItems = useAppSelector(selectCartItems);
+  const [logoutUser] = useLogoutUserMutation();
 
-  const logout = async () => {
+  const handleLogout = async () => {
     try {
-      const { data } = await api.get("/api/user/logout");
-      if (data.success) {
-        // Remove stored token so the auth interceptor stops sending it
+      const result = await logoutUser();
+      if (result.data?.success) {
         localStorage.removeItem("token");
-
-        toast.success(data.message);
-        setCartItems({});
-        setUser(null);
+        toast.success(result.data.message);
+        dispatch(setCartItems({}));
+        dispatch(logoutAction());
         navigate("/");
       } else {
-        toast.error(data.message);
+        toast.error(result.data?.message || "Unable to logout");
       }
     } catch (error) {
       toast.error(error.message);
@@ -187,9 +187,10 @@ const Navbar = () => {
     }
   }, [user]);
 
+
   return (
     <>
-      <LoginModal showModal={showModal} setShowModal={setShowModal} api={api} navigate={navigate} />
+      <LoginModal showModal={showModal} setShowModal={setShowModal} />
 
       <nav className="flex items-center justify-between px-6 md:px-16 lg:px-24 xl:px-32 py-4 border-b border-gray-300 bg-white relative">
         <NavLink to="/" onClick={() => setOpen(false)}>
@@ -197,9 +198,6 @@ const Navbar = () => {
         </NavLink>
 
         <div className="hidden sm:flex items-center gap-8">
-          {/* <NavLink to="/practice" className="hover:text-green-600 transition font-medium">
-            Practice
-          </NavLink> */}
           <NavLink to="/" className="hover:text-green-600 transition font-medium">
             Home
           </NavLink>
@@ -214,7 +212,7 @@ const Navbar = () => {
             <input
               className="py-1.5 w-full bg-transparent outline-none placeholder-gray-500"
               type="text"
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => dispatch(setSearchQuery(e.target.value))}
               placeholder="Search products"
             />
             <img src={assets.search_icon} alt="search" className="w-4 h-4" />
@@ -222,7 +220,7 @@ const Navbar = () => {
 
           <div
             onClick={() => {
-              if (getCartCount() === 0) {
+              if (cartCount === 0) {
                 toast.error(
                   "Cart is Empty please add items to move to Cart Section"
                 );
@@ -238,7 +236,7 @@ const Navbar = () => {
               className="w-6 opacity-80"
             />
             <button className="absolute -top-2 -right-3 text-xs text-white bg-green-600 w-[18px] h-[18px] rounded-full">
-              {getCartCount()}
+              {cartCount}
             </button>
           </div>
 
@@ -266,7 +264,7 @@ const Navbar = () => {
                   My Orders
                 </li>
                 <li
-                  onClick={logout}
+                  onClick={handleLogout}
                   className="px-4 py-2 hover:bg-red-50 cursor-pointer transition font-medium text-red-600"
                 >
                   Logout
@@ -287,7 +285,7 @@ const Navbar = () => {
               className="w-6 opacity-80"
             />
             <button className="absolute -top-2 -right-3 text-xs text-white bg-green-600 w-[18px] h-[18px] rounded-full">
-              {getCartCount()}
+              {cartCount}
             </button>
           </div>
 
@@ -324,7 +322,7 @@ const Navbar = () => {
               </button>
             ) : (
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 className="w-full px-6 py-2 bg-red-600 text-white rounded-lg font-semibold mt-4"
               >
                 Logout

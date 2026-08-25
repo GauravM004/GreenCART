@@ -1,11 +1,12 @@
 import React from "react";
-import { useAppContext } from "../context/AppContext";
+import { useGetProductsQuery } from "../features/products/productApi";
 import { useParams } from "react-router-dom";
 import { categories } from "../assets/assets";
 import ProductCard from "../components/ProductCard";
 
 const ProductCategory = () => {
-  const { products } = useAppContext();
+  const { data: productsData } = useGetProductsQuery();
+  const products = productsData?.success ? productsData.products : [];
   const { category } = useParams();
 
   const searchCategory = categories.find(

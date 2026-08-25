@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { assets, categories } from "../../assets/assets";
-import { useAppContext } from "../../context/AppContext";
 import toast from "react-hot-toast";
+import { useAddProductMutation } from "../../features/products/productApi";
 
 const AddProduct = () => {
   const [files, setFiles] = useState([]);
@@ -11,12 +11,12 @@ const AddProduct = () => {
   const [price, setPrice] = useState("");
   const [offerPrice, setOfferPrice] = useState("");
 
-  const { api } = useAppContext();
+  const [addProduct, { isLoading }] = useAddProductMutation();
 
   const onSubmitHandler = async (event) => {
-    try {
-      event.preventDefault();
+    event.preventDefault();
 
+    try {
       const productData = {
         name,
         description: description.split("\n"),
@@ -31,21 +31,17 @@ const AddProduct = () => {
         formData.append("images", files[i]);
       }
 
-      const { data } = await api.post("/api/product/add", formData);
+      const result = await addProduct(formData).unwrap();
 
-      if (data.success) {
-        toast.success(data.message);
-        setName("");
-        setDescription("");
-        setCategory("");
-        setPrice("");
-        setOfferPrice("");
-        setFiles([]);
-      } else {
-        toast.error(data.message);
-      }
+      toast.success(result?.message || "Product added successfully");
+      setName("");
+      setDescription("");
+      setCategory("");
+      setPrice("");
+      setOfferPrice("");
+      setFiles([]);
     } catch (error) {
-      toast.error(error.message);
+      toast.error(error?.data?.message || "Failed to add product");
     }
   };
 
@@ -181,9 +177,10 @@ const AddProduct = () => {
           <div className="pt-4 flex justify-end">
             <button
               type="submit"
-              className="px-10 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dull transition shadow-md cursor-pointer"
+              disabled={isLoading}
+              className="px-10 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-primary-dull transition shadow-md cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Publish Product
+              {isLoading ? "Publishing..." : "Publish Product"}
             </button>
           </div>
         </form>

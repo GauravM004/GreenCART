@@ -1,69 +1,47 @@
-import React, { useEffect, useState } from "react";
-import { useAppContext } from "../../context/AppContext";
+import React, { useState, useMemo } from "react";
 import toast from "react-hot-toast";
 import { Mail, Trash2, Eye, Download, Filter, Search } from "lucide-react";
+import {
+  useGetContactSubmissionsQuery,
+  useDeleteContactSubmissionMutation,
+} from "../../features/contact/contactApi";
 
 const ContactUs = () => {
-  const { api } = useAppContext();
-  const [messages, setMessages] = useState([]);
-  const [filteredMessages, setFilteredMessages] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedMessage, setSelectedMessage] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [sortBy, setSortBy] = useState("latest");
 
-  useEffect(() => {
-    fetchMessages();
-  }, []);
-  const fetchMessages = async () => {
-    try {
-      setIsLoading(true);
-      const { data } = await api.get("/api/contact-us/");
-      console.log("API Response:", data);
-      if (!data.success) {
-        throw new Error("Failed to fetch messages");
-      }
-      setMessages(data.data || []);
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      setMessages(getMockData());
-      toast.error("Using demo data - Connect to your API");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const { data, isLoading, isError } = useGetContactSubmissionsQuery();
+  const messages = data?.data || [];
 
-  useEffect(() => {
+  const [deleteContactSubmission] = useDeleteContactSubmissionMutation();
+
+  const filteredMessages = useMemo(() => {
     let filtered = messages;
+
     if (searchTerm) {
       filtered = filtered.filter(
         (msg) =>
           msg.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           msg.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          msg.message.toLowerCase().includes(searchTerm.toLowerCase()),
+          msg.message.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+
     if (sortBy === "latest") {
       filtered = [...filtered].reverse();
-    } else if (sortBy === "oldest") {
-      filtered = [...filtered];
     }
-    setFilteredMessages(filtered);
+
+    return filtered;
   }, [messages, searchTerm, sortBy]);
 
   const handleDelete = async (id) => {
     try {
-      await api.delete(`/api/contact-us/${id}`);
-
-      setMessages(messages.filter((msg) => msg._id !== id));
+      await deleteContactSubmission(id).unwrap();
       setSelectedMessage(null);
       toast.success("Message deleted successfully");
     } catch (error) {
-      console.error("Error deleting message:", error);
-      // Fallback to local deletion
-      setMessages(messages.filter((msg) => msg._id !== id));
-      setSelectedMessage(null);
-      toast.success("Message deleted");
+      toast.error(error?.data?.message || "Failed to delete message");
     }
   };
 
@@ -183,6 +161,13 @@ const ContactUs = () => {
               </div>
               <p className="text-gray-600 mt-4">Loading messages...</p>
             </div>
+          ) : isError ? (
+            <div className="p-12 text-center">
+              <Mail className="w-12 h-12 text-red-300 mx-auto mb-4" />
+              <p className="text-red-500 text-lg">
+                Failed to load contact submissions.
+              </p>
+            </div>
           ) : filteredMessages.length === 0 ? (
             <div className="p-12 text-center">
               <Mail className="w-12 h-12 text-gray-300 mx-auto mb-4" />
@@ -220,7 +205,7 @@ const ContactUs = () => {
                 <tbody>
                   {filteredMessages.map((msg, index) => (
                     <tr
-                      key={msg.id}
+                      key={msg._id}
                       className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200 group"
                     >
                       <td className="px-6 py-4 text-sm text-gray-700 font-semibold">
@@ -258,7 +243,7 @@ const ContactUs = () => {
                             <Eye className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDelete(msg.id)}
+                            onClick={() => handleDelete(msg._id)}
                             className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors duration-200"
                             title="Delete message"
                           >
@@ -330,7 +315,7 @@ const ContactUs = () => {
                 Reply via Email
               </a>
               <button
-                onClick={() => handleDelete(selectedMessage.id)}
+                onClick={() => handleDelete(selectedMessage._id)}
                 className="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-600 rounded-lg font-medium transition-colors duration-200"
               >
                 Delete

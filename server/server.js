@@ -12,7 +12,7 @@ import addressRouter from './routes/addressRoute.js';
 import orderRouter from './routes/orderRoute.js';
 import contactUsRouter from './routes/ContactUsRoute.js'; 
 import adminDashboardRouter from './routes/adminDashboardRoute.js'
-import { stripeWebhooks } from './controllers/orderController.js';
+import { razorpayWebhooks } from './controllers/orderController.js';
 import session from "express-session";
 import passport from "passport";
 import "./configs/passport.js";
@@ -24,9 +24,9 @@ await connectDB()
 await connectCloudinary()
 
 // Allow multiple origins
-const allowedOrigins = ['http://localhost:5173', '']
+const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174', '']
 
-app.post('/stripe', express.raw({type: 'application/json'}), stripeWebhooks)
+app.post('/razorpay', express.raw({type: 'application/json'}), razorpayWebhooks)
 
 app.use(session({
   secret: "oauth-secret",

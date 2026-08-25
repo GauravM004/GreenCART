@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { useAppContext } from "../context/AppContext";
 import toast from "react-hot-toast";
+import { useSubmitContactFormMutation } from "../features/contact/contactApi";
 
 export default function ContactUs() {
-  const { api } = useAppContext();
 
   const [formData, setFormData] = useState({
     name: "",
@@ -12,6 +11,7 @@ export default function ContactUs() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [submitContactForm] = useSubmitContactFormMutation();
 
   const handleChange = (e) => {
     setFormData({
@@ -25,17 +25,17 @@ export default function ContactUs() {
     setLoading(true);
     console.log(formData);
     try {
-      const { data } = await api.post("/api/contact-us/submit", formData);
+      const result = await submitContactForm(formData).unwrap();
 
-      if (data.success) {
-        toast.success(data.message);
+      if (result.data?.success) {
+        toast.success(result.data.message);
         setFormData({
           name: "",
           email: "",
           message: "",
         });
       } else {
-        toast.error(data.message);
+        toast.error(result.data?.message || "Something went wrong");
       }
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");

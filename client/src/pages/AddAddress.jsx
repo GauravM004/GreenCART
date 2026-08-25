@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { assets } from "../assets/assets";
-import { useAppContext } from "../context/AppContext";
+import { useAppSelector } from "../app/hooks";
+import { selectAuthUser } from "../features/auth/authSlice";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useAddAddressMutation } from "../features/address/addressApi";
 
 const InputField = ({ type, placeholder, name, handleChange, address }) => (
   <input
@@ -16,7 +19,9 @@ const InputField = ({ type, placeholder, name, handleChange, address }) => (
 );
 
 const AddAddress = () => {
-  const { api, user, navigate } = useAppContext();
+  const user = useAppSelector(selectAuthUser);
+  const navigate = useNavigate();
+  const [addAddress] = useAddAddressMutation();
 
   const [address, setAddress] = useState({
     firstName: "",
@@ -43,13 +48,13 @@ const AddAddress = () => {
   const onSubmitHandler = async (e) => {
     e.preventDefault();
     try {
-      const { data } = await api.post("/api/address/add", { address });
+      const result = await addAddress({ address });
 
-      if (data.success) {
-        toast.success(data.message);
+      if (result.data?.success) {
+        toast.success(result.data.message);
         navigate("/cart");
       } else {
-        toast.error(data.message);
+        toast.error(result.data?.message || "Unable to save address");
       }
     } catch (error) {
       toast.error(error.message);

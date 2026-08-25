@@ -1,15 +1,13 @@
-import mongoose from "mongoose";
+import { PrismaClient } from "@prisma/client";
 
-const connectDB = async () => {
-  try {
-await mongoose.connect(
-  `${process.env.MONGODB_URI}/greencart?retryWrites=true&w=majority`
-);
-    console.log("Database Connected");
-  } catch (error) {
-    console.error("DB error:", error.message);
-    process.exit(1);
-  }
-};
+// Prevents exhausting the connection pool from hot-reload creating
+// multiple PrismaClient instances in dev (nodemon).
+const globalForPrisma = globalThis;
 
-export default connectDB;
+const prisma = globalForPrisma.prisma || new PrismaClient();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
+
+export default prisma;
